@@ -2,6 +2,37 @@
 
 This is a C++17 header-only Actor Model library. It was written purely out of fun.
 
+### Example
+
+```cpp
+#include <actor/actor.h>
+#include <cstdlib>
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    actor::Actor<int> a = [](actor::Receiver<int> receive) {
+        while (auto x = receive())
+            cout << "a: " << *x << endl;
+    };
+
+    actor::Actor<int> b = [&](actor::Receiver<int> receive) {
+        while (auto x = receive()) {
+            cout << "b: " << *x << endl;
+            a << *x * 10;
+        }
+    };
+
+    for (int i = 1; i < 10; ++i) {
+        cout << "send: " << i << endl;
+        b << i;
+    }
+
+    return EXIT_SUCCESS;
+}
+```
+
 ### License
 
 ```

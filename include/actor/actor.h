@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <actor/message.h>
 #include <atomic>
 #include <condition_variable>
 #include <deque>
@@ -16,13 +17,35 @@
 
 namespace actor {
 
-template <typename Message>
-using Receiver = std::function<std::optional<Message>()>;
+class Actor;
+class Receiver {
+  public:
+	Receiver(Actor& actor) : actor_{actor} {}
 
-template <typename Message>
+	struct iterator {
+		Actor& actor;
+		bool eos = false;
+		Message value;
+
+		bool operator==(const iterator& rhs) const noexcept { return eos == rhs.eos; }
+		bool operator!=(const iterator& rhs) const noexcept { return eos != rhs.eos; }
+
+		const Message& operator*() const { return value; }
+		Message& operator*() { return value; }
+
+		iterator& operator++();
+	};
+
+	iterator begin();
+	iterator end();
+
+  private:
+	Actor& actor_;
+};
+
 class Actor {
   public:
-	using Handler = std::function<void(Receiver<Message>)>;
+	using Handler = std::function<void(Receiver)>;
 
 	template <typename T>
 	Actor(const T& handler);
@@ -31,21 +54,23 @@ class Actor {
 	Actor(T&& handler);
 
 	Actor() = default;
-	Actor(const Actor<Message>&) = default;
-	Actor(Actor<Message>&&) = default;
-	Actor& operator=(const Actor<Message>&) = delete;
-	Actor& operator=(Actor<Message>&&) = delete;
+	Actor(const Actor&) = default;
+	Actor(Actor&&) = default;
+	Actor& operator=(const Actor&) = delete;
+	Actor& operator=(Actor&&) = delete;
 	~Actor();
 
 	void send(const Message& message);
 	void send(Message&& message);
 
-	Actor<Message>& operator<<(const Message& m);
-	Actor<Message>& operator<<(Message&& m);
+	Actor& operator<<(const Message& m);
+	Actor& operator<<(Message&& m);
+
+	bool killing() const noexcept { return killing_.load(); }
+	std::optional<Message> receive();
 
   private:
 	void main();
-	std::optional<Message> receive();
 
   private:
 	Handler handler_;

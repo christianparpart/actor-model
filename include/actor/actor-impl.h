@@ -6,35 +6,30 @@
 
 namespace actor {
 
-template <typename Message>
 template <typename T>
-Actor<Message>::Actor(const T& handler) : Actor<Message>(T{handler})
+inline Actor::Actor(const T& handler) : Actor(T{handler})
 {
 }
 
-template <typename Message>
 template <typename T>
-Actor<Message>::Actor(T&& handler)
-	: handler_{std::move(handler)}, killing_{false}, inbox_{}, thread_{std::bind(&Actor<Message>::main, this)}
+inline Actor::Actor(T&& handler)
+	: handler_{std::move(handler)}, killing_{false}, inbox_{}, thread_{std::bind(&Actor::main, this)}
 {
 }
 
-template <typename Message>
-Actor<Message>::~Actor()
+inline Actor::~Actor()
 {
 	killing_.store(true);
 	condition_.notify_one();
 	thread_.join();
 }
 
-template <typename Message>
-void Actor<Message>::main()
+inline void Actor::main()
 {
-	handler_(std::bind(&Actor<Message>::receive, this));
+	handler_(Receiver{*this});
 }
 
-template <typename Message>
-std::optional<Message> Actor<Message>::receive()
+inline std::optional<Message> Actor::receive()
 {
 	std::unique_lock lock{lock_};
 	condition_.wait(lock, [this]() { return !inbox_.empty() || killing_.load(); });
@@ -47,34 +42,50 @@ std::optional<Message> Actor<Message>::receive()
 	return std::nullopt;
 }
 
-template <typename Message>
-void Actor<Message>::send(const Message& message)
+inline void Actor::send(const Message& message)
 {
 	std::unique_lock lock{lock_};
 	inbox_.emplace_back(message);
 	condition_.notify_one();
 }
 
-template <typename Message>
-void Actor<Message>::send(Message&& message)
+inline void Actor::send(Message&& message)
 {
 	std::unique_lock lock{lock_};
 	inbox_.emplace_back(std::move(message));
 	condition_.notify_one();
 }
 
-template <typename Message>
-Actor<Message>& Actor<Message>::operator<<(const Message& m)
+inline Actor& Actor::operator<<(const Message& m)
 {
 	send(m);
 	return *this;
 }
 
-template <typename Message>
-Actor<Message>& Actor<Message>::operator<<(Message&& m)
+inline Actor& Actor::operator<<(Message&& m)
 {
 	send(std::move(m));
 	return *this;
+}
+
+inline Receiver::iterator& Receiver::iterator::operator++()
+{
+	if (std::optional<Message> m = actor.receive())
+		value = *m;
+	else
+		eos = true;
+
+	return *this;
+}
+
+inline Receiver::iterator Receiver::begin()
+{
+	return iterator{actor_, false};
+}
+
+inline Receiver::iterator Receiver::end()
+{
+	return iterator{actor_, true};
 }
 
 }  // namespace actor

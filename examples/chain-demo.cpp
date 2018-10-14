@@ -5,6 +5,7 @@
 // the License at: http://opensource.org/licenses/MIT
 
 #include <actor/actor.h>
+#include <actor/message.h>
 #include <chrono>
 #include <iostream>
 #include <thread>
@@ -12,7 +13,8 @@
 using namespace std;
 using namespace std::chrono_literals;
 
-void ilog(const char* prefix, int n)
+template<typename T>
+void ilog(const char* prefix, const T& n)
 {
 	static mutex m;
 	lock_guard lock{m};
@@ -21,17 +23,21 @@ void ilog(const char* prefix, int n)
 
 int main(int argc, const char* argv[])
 {
-	actor::Actor<int> a = [](actor::Receiver<int> receive) {
-		while (auto x = receive())
-			ilog("a: ", *x);
+	actor::Actor a = [](actor::Receiver inbox) {
+		for (actor::Message& mesg : inbox)
+			mesg.match<int>([](int value) { ilog("a: ", value); })
+				.match<bool>([](bool b) { ilog("a: ", b); })
+				.match<string>([](const string& s) { ilog("a: ", s); })
+				// yeah, just to demo the capabilities ;-D
+				;
 	};
 
-	actor::Actor<int> b = [&](actor::Receiver<int> receive) {
-		while (auto x = receive())
-		{
-			ilog("b: ", *x);
-			a << *x * 10;
-		}
+	actor::Actor b = [&](actor::Receiver receive) {
+		for (actor::Message& mesg : receive)
+			mesg.match<int>([&](int value) {
+				ilog("b: ", value);
+				a << value * 10;
+			});
 	};
 
 	for (int i = 1; i < 10; ++i)

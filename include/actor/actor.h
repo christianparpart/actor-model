@@ -22,6 +22,8 @@ class Receiver {
   public:
 	Receiver(Actor& actor) : actor_{actor} {}
 
+	std::optional<Message> receive();
+
 	struct iterator {
 		Actor& actor;
 		Message value;

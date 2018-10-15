@@ -20,8 +20,8 @@ struct time_request {
 int main(int argc, const char* argv[])
 {
 	actor::Actor client = [&](actor::Receiver receiver) {
-		for (actor::Message& mesg : receiver)
-			mesg.expect<Time>([](const Time& ti) {
+    if (auto mesg = receiver.receive(); mesg.has_value())
+			mesg->expect<Time>([](const Time& ti) {
 				const time_t t = chrono::system_clock::to_time_t(ti);
 				cout << "Response: " << put_time(localtime(&t), "%F %T") << '\n';
 			});

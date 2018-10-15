@@ -55,6 +55,11 @@ inline Actor& Actor::operator<<(Message&& m)
 	return *this;
 }
 
+inline std::optional<Message> Receiver::receive()
+{
+    return actor_.receive();
+}
+
 inline Receiver::iterator& Receiver::iterator::operator++()
 {
 	if (std::optional<Message> m = actor.receive())

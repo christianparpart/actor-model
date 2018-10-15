@@ -24,8 +24,8 @@ class Receiver {
 
 	struct iterator {
 		Actor& actor;
-		bool eos = false;
 		Message value;
+		bool eos = false;
 
 		bool operator==(const iterator& rhs) const noexcept { return eos == rhs.eos; }
 		bool operator!=(const iterator& rhs) const noexcept { return eos != rhs.eos; }
@@ -60,10 +60,7 @@ class Actor {
 	Actor& operator=(Actor&&) = delete;
 	~Actor();
 
-	void send(const Message& message);
 	void send(Message&& message);
-
-	Actor& operator<<(const Message& m);
 	Actor& operator<<(Message&& m);
 
 	bool killing() const noexcept { return killing_.load(); }

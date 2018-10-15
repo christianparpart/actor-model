@@ -14,19 +14,22 @@ using namespace std;
 using Time = std::chrono::time_point<std::chrono::system_clock>;
 
 struct time_request {
-	actor::Actor<Time>& sender;
+	actor::Actor& sender;
 };
 
 int main(int argc, const char* argv[])
 {
-	actor::Actor<Time> client = [&](actor::Receiver<Time> receive) {
-		const time_t t = chrono::system_clock::to_time_t(*receive());
-		cout << "Response: " << put_time(localtime(&t), "%F %T") << '\n';
+	actor::Actor client = [&](actor::Receiver receiver) {
+		for (actor::Message& mesg : receiver)
+			mesg.expect<Time>([](const Time& ti) {
+				const time_t t = chrono::system_clock::to_time_t(ti);
+				cout << "Response: " << put_time(localtime(&t), "%F %T") << '\n';
+			});
 	};
 
-	actor::Actor<time_request> server = [](actor::Receiver<time_request> receive) {
-		while (optional<time_request> x = receive())
-			x->sender << chrono::system_clock::now();
+	actor::Actor server = [](actor::Receiver receiver) {
+		for (actor::Message& mesg : receiver)
+			mesg.expect<time_request>([](time_request tr) { tr.sender << chrono::system_clock::now(); });
 	};
 
 	server << time_request{client};

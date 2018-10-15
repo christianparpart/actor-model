@@ -42,24 +42,11 @@ inline std::optional<Message> Actor::receive()
 	return std::nullopt;
 }
 
-inline void Actor::send(const Message& message)
-{
-	std::unique_lock lock{lock_};
-	inbox_.emplace_back(message);
-	condition_.notify_one();
-}
-
 inline void Actor::send(Message&& message)
 {
 	std::unique_lock lock{lock_};
 	inbox_.emplace_back(std::move(message));
 	condition_.notify_one();
-}
-
-inline Actor& Actor::operator<<(const Message& m)
-{
-	send(m);
-	return *this;
 }
 
 inline Actor& Actor::operator<<(Message&& m)
@@ -71,7 +58,7 @@ inline Actor& Actor::operator<<(Message&& m)
 inline Receiver::iterator& Receiver::iterator::operator++()
 {
 	if (std::optional<Message> m = actor.receive())
-		value = *m;
+		value = std::move(*m);
 	else
 		eos = true;
 
@@ -80,12 +67,15 @@ inline Receiver::iterator& Receiver::iterator::operator++()
 
 inline Receiver::iterator Receiver::begin()
 {
-	return iterator{actor_, false};
+    if (auto mesg = actor_.receive())
+        return iterator{actor_, std::move(*mesg), false};
+    else
+        return end();
 }
 
 inline Receiver::iterator Receiver::end()
 {
-	return iterator{actor_, true};
+	return iterator{actor_, {}, true};
 }
 
 }  // namespace actor

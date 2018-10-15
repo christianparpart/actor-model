@@ -36,17 +36,17 @@ install(
     DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
     FILES_MATCHING PATTERN "*.h")
 
-option(ACTOR_EXAMPLES "Build examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
+option(ACTOR_EXAMPLES "Build Actor examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 
 # ----------------------------------------------------------------------------
 if(ACTOR_EXAMPLES)
-  add_executable(actor-chain-demo examples/chain-demo.cpp)
-  set_target_properties(actor-chain-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-  target_link_libraries(actor-chain-demo actor)
+  add_executable(chain-demo examples/chain-demo.cpp)
+  set_target_properties(chain-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(chain-demo actor)
 
-  add_executable(actor-time-server-demo examples/time-server-demo.cpp)
-  set_target_properties(actor-time-server-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-  target_link_libraries(actor-time-server-demo actor)
+  add_executable(time-server-demo examples/time-server-demo.cpp)
+  set_target_properties(time-server-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(time-server-demo actor)
 
   add_executable(logging-demo examples/logging-demo.cpp)
   set_target_properties(logging-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)

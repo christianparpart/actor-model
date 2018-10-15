@@ -12,22 +12,18 @@ This is a C++17 header-only Actor Model library. It was written purely out of fu
 using namespace std;
 
 int main() {
-    actor::Actor<int> a = [](actor::Receiver<int> receive) {
-        while (auto x = receive())
-            cout << "a: " << *x << endl;
+    actor::Actor logger = [](actor::Receiver receiver) {
+        for (actor::Message& mesg : receiver)
+            mesg.match<string>([](string const& s) { cout << "LOG(str): " << s << endl; })
+                .match<int>([](int val) { cout << "LOG(num): " << val << endl; })
+                .match<bool>([](bool val) { cout << "LOG(bool): " << boolalpha << val << endl; })
+                .otherwise([] { cout << "LOG(?): Unhandled!\n"; });
     };
 
-    actor::Actor<int> b = [&](actor::Receiver<int> receive) {
-        while (auto x = receive()) {
-            cout << "b: " << *x << endl;
-            a << *x * 10;
-        }
-    };
-
-    for (int i = 1; i < 10; ++i) {
-        cout << "send: " << i << endl;
-        b << i;
-    }
+    logger << string("Hello, World");
+    logger << 42;
+    logger << true;
+    logger << 2.81;
 
     return EXIT_SUCCESS;
 }

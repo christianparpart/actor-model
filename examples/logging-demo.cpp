@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-#include <actor/actor.h>
+#include <actor/actor.hpp>
 
 using namespace std;
 

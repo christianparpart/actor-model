@@ -8,8 +8,8 @@
 #include <iostream>
 #include <thread>
 
-#include <actor/actor.h>
-#include <actor/message.h>
+#include <actor/actor.hpp>
+#include <actor/message.hpp>
 
 using namespace std;
 using namespace std::chrono_literals;

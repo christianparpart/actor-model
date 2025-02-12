@@ -36,7 +36,7 @@ install(TARGETS actor DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(
     DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/actor"
     DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
-    FILES_MATCHING PATTERN "*.h")
+    FILES_MATCHING PATTERN "*.hpp")
 
 option(ACTOR_EXAMPLES "Build Actor examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 

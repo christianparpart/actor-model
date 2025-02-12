@@ -14,7 +14,7 @@
 #include <optional>
 #include <thread>
 
-#include <actor/message.h>
+#include <actor/message.hpp>
 
 namespace actor
 {

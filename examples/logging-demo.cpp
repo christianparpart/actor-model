@@ -16,11 +16,11 @@ int main()
 {
     actor::Actor logger = [](actor::Receiver receiver) {
         for (actor::Message& mesg: receiver)
-            mesg.match<string>([](string const& s) { cout << "LOG(str): " << s << endl; })
-                .match<char const*>([](char const* val) { cout << "LOG(cstr): " << val << endl; })
-                .match<int>([](int val) { cout << "LOG(num): " << val << endl; })
-                .match<float>([](float val) { cout << "LOG(float): " << val << endl; })
-                .match<bool>([](bool val) { cout << "LOG(bool): " << boolalpha << val << endl; })
+            mesg.match<string>([](string const& s) { cout << "LOG(str): " << s << '\n'; })
+                .match<char const*>([](char const* val) { cout << "LOG(cstr): " << val << '\n'; })
+                .match<int>([](int val) { cout << "LOG(num): " << val << '\n'; })
+                .match<float>([](float val) { cout << "LOG(float): " << val << '\n'; })
+                .match<bool>([](bool val) { cout << "LOG(bool): " << boolalpha << val << '\n'; })
                 .otherwise([] { cout << "LOG(?): Unhandled!\n"; });
     };
 

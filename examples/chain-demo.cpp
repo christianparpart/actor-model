@@ -19,7 +19,7 @@ void ilog(const char* prefix, const T& n)
 {
     static mutex m;
     lock_guard lock { m };
-    cout << prefix << n << endl;
+    cout << prefix << n << '\n';
 }
 
 int main(int argc, const char* argv[])

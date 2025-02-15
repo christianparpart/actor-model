@@ -1,10 +1,7 @@
-# (c) 2018 Christian Parpart <christian@parpart.family>
-#
-# Licensed under the MIT License (the "License"); you may not use this
-# file except in compliance with the License. You may obtain a copy of
-# the License at: http://opensource.org/licenses/MIT
+cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 3.6)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 project(actor VERSION "0.0.0" LANGUAGES CXX)
 
 set(MASTER_PROJECT OFF)
@@ -18,6 +15,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
 
+include(ClangTidy)
+include(PedanticCompiler)
+
 # ----------------------------------------------------------------------------
 if(NOT MSVC)
   add_definitions(-Wall)
@@ -27,6 +27,7 @@ endif()
 # ----------------------------------------------------------------------------
 add_library(actor INTERFACE)
 target_include_directories(actor INTERFACE include/)
+target_compile_features(actor INTERFACE cxx_std_23)
 
 if(NOT MSVC)
   target_link_libraries(actor INTERFACE pthread)

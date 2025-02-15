@@ -19,20 +19,20 @@ struct time_request
     actor::Actor& sender;
 };
 
-int main(int argc, const char* argv[])
+int main()
 {
-    actor::Actor client = [&](actor::Receiver receiver) {
+    auto client = actor::Actor([&](actor::Receiver receiver) {
         if (auto mesg = receiver.receive(); mesg.has_value())
             mesg->expect<Time>([](const Time& ti) {
                 const time_t t = chrono::system_clock::to_time_t(ti);
                 cout << "Response: " << put_time(localtime(&t), "%F %T") << '\n';
             });
-    };
+    });
 
-    actor::Actor server = [](actor::Receiver receiver) {
+    auto server = actor::Actor([](actor::Receiver receiver) {
         for (actor::Message& mesg: receiver)
             mesg.expect<time_request>([](time_request tr) { tr.sender << chrono::system_clock::now(); });
-    };
+    });
 
-    server << time_request { client };
+    server.send(time_request { client });
 }

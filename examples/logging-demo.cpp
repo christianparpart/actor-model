@@ -10,26 +10,24 @@
 
 #include <actor/actor.hpp>
 
-using namespace std;
-
 int main()
 {
-    actor::Actor logger = [](actor::Receiver receiver) {
+    auto logger = actor::Actor { [](actor::Receiver receiver) {
         for (actor::Message& mesg: receiver)
-            mesg.match<string>([](string const& s) { cout << "LOG(str): " << s << '\n'; })
-                .match<char const*>([](char const* val) { cout << "LOG(cstr): " << val << '\n'; })
-                .match<int>([](int val) { cout << "LOG(num): " << val << '\n'; })
-                .match<float>([](float val) { cout << "LOG(float): " << val << '\n'; })
-                .match<bool>([](bool val) { cout << "LOG(bool): " << boolalpha << val << '\n'; })
-                .otherwise([] { cout << "LOG(?): Unhandled!\n"; });
-    };
+            mesg.match<std::string>([](auto&& s) { std::cout << "LOG(str): " << s << '\n'; })
+                .match<char const*>([](auto&& val) { std::cout << "LOG(cstr): " << val << '\n'; })
+                .match<int>([](auto val) { std::cout << "LOG(num): " << val << '\n'; })
+                .match<float>([](auto val) { std::cout << "LOG(float): " << val << '\n'; })
+                .match<bool>([](auto val) { std::cout << "LOG(bool): " << std::boolalpha << val << '\n'; })
+                .otherwise([] { std::cout << "LOG(?): Unhandled!\n"; });
+    } };
 
-    logger << string("Hello, World");
+    logger << std::string("Hello, World");
     logger << "Hello, World";
     logger << 42;
     logger << true;
     logger << 2.81;
-    logger << 3.14f;
+    logger << 3.14F;
 
     return EXIT_SUCCESS;
 }

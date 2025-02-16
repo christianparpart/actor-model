@@ -7,7 +7,7 @@
 
 int main()
 {
-    auto channel = Channel<int> { ChannelBufferSize { 1 } };
+    auto channel = comms::Channel<int> { comms::ChannelBufferSize { 1 } };
     auto sender = std::thread { [&channel] {
         std::println("Sending messages:");
         for (int i = 1; i <= 5; ++i)

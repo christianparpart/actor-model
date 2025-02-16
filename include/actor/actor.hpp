@@ -96,28 +96,28 @@ class Receiver
 
     struct iterator
     {
-        Actor& actor;
-        Message value;
-        bool eos = false;
+        Actor& _actor;
+        Message _value;
+        bool _eos = false;
 
         bool operator==(iterator const& rhs) const noexcept
         {
-            return eos == rhs.eos;
+            return _eos == rhs._eos;
         }
 
         bool operator!=(iterator const& rhs) const noexcept
         {
-            return eos != rhs.eos;
+            return _eos != rhs._eos;
         }
 
         Message const& operator*() const
         {
-            return value;
+            return _value;
         }
 
         Message& operator*()
         {
-            return value;
+            return _value;
         }
 
         iterator& operator++();
@@ -140,7 +140,8 @@ class Actor
     using Handler = std::function<void(Receiver)>;
 
     template <typename T>
-    explicit Actor(T&& handler);
+        requires(std::invocable<T, Receiver>)
+    Actor(T&& handler);
 
     Actor() = delete;
     Actor(Actor&&) = delete;
@@ -172,6 +173,7 @@ class Actor
 };
 
 template <typename T>
+    requires(std::invocable<T, Receiver>)
 inline Actor::Actor(T&& handler):
     _handler { std::forward<T>(handler) },
     _killing { false },
@@ -225,10 +227,10 @@ inline std::optional<Message> Receiver::receive()
 
 inline Receiver::iterator& Receiver::iterator::operator++()
 {
-    if (std::optional<Message> m = actor.receive())
-        value = std::move(*m);
+    if (std::optional<Message> m = _actor.receive())
+        _value = std::move(*m);
     else
-        eos = true;
+        _eos = true;
 
     return *this;
 }
@@ -237,9 +239,9 @@ inline Receiver::iterator Receiver::begin()
 {
     if (auto message = _actor.receive())
         return iterator {
-            .actor = _actor,
-            .value = std::move(*message),
-            .eos = false,
+            ._actor = _actor,
+            ._value = std::move(*message),
+            ._eos = false,
         };
     else
         return end();
@@ -247,7 +249,7 @@ inline Receiver::iterator Receiver::begin()
 
 inline Receiver::iterator Receiver::end()
 {
-    return iterator { .actor = _actor, .value = {}, .eos = true };
+    return iterator { ._actor = _actor, ._value = {}, ._eos = true };
 }
 
 } // namespace actor

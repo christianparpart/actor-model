@@ -7,6 +7,9 @@
 #include <mutex>
 #include <optional>
 
+namespace comms
+{
+
 /// The buffer size of the channel.
 struct ChannelBufferSize
 {
@@ -124,3 +127,5 @@ inline void Channel<T>::close() noexcept
     _terminating.store(true);
     _condition.notify_all();
 }
+
+} // namespace comms

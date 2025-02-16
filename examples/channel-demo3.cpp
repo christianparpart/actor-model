@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <chrono>
-#include <format>
 #include <print>
 #include <thread>
-#include <tuple>
 
 #include <actor/channel.hpp>
+
+template <typename... Ts>
+void join(Ts&... threads)
+{
+    (threads.join(), ...);
+}
 
 int main()
 {
@@ -15,7 +19,7 @@ int main()
     auto senderA = std::thread { [&channelA] {
         for (int i = 1; i <= 5; ++i)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
             channelA.send(i);
         }
         channelA.close();
@@ -25,7 +29,7 @@ int main()
     auto senderB = std::thread { [&channelB] {
         for (auto const* name: { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Judy" })
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            std::this_thread::sleep_for(std::chrono::milliseconds(125));
             channelB.send(name);
         }
         channelB.close();
@@ -35,7 +39,7 @@ int main()
     auto senderC = std::thread { [&channelC] {
         for (int i = 1; i <= 5; ++i)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(750));
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
             channelC.send(i * std::numbers::pi);
         }
         channelC.close();
@@ -43,8 +47,8 @@ int main()
 
     while (controller.select(
         []<typename T>(comms::Channel<T>& channel) {
-            if (auto const value = channel.try_receive(); value.has_value())
-                std::println("Received message from channel: {}", value.value());
+            if (auto const message = channel.try_receive(); message.has_value())
+                std::println("Received message from channel: {}", message.value());
         },
         channelA,
         channelB,
@@ -53,9 +57,7 @@ int main()
         // Do nothing.
     }
 
-    senderA.join();
-    senderB.join();
-    senderC.join();
+    join(senderA, senderB, senderC);
 
     return EXIT_SUCCESS;
 }

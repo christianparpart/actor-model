@@ -43,6 +43,10 @@ option(ACTOR_EXAMPLES "Build Actor examples [default: ${MASTER_PROJECT}]" ${MAST
 
 # ----------------------------------------------------------------------------
 if(ACTOR_EXAMPLES)
+  add_executable(channel-demo examples/channel-demo.cpp)
+  set_target_properties(channel-demo PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(channel-demo actor)
+
   add_executable(chain-demo examples/chain-demo.cpp)
   set_target_properties(chain-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(chain-demo actor)

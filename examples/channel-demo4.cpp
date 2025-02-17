@@ -51,13 +51,13 @@ struct Calculator
     void operator()(channel::Channel<Divide>& channel)
     {
         if (auto const expr = channel.try_receive(); expr.has_value())
-            std::println("{}: {} / {} = {}",
+            std::println("{}: {} / {} = {:.2f}",
                          channel.name(),
                          expr->a,
                          expr->b,
                          std::abs(expr->b) <= std::numeric_limits<double>::epsilon()
-                             ? expr->a / expr->b
-                             : std::numeric_limits<double>::infinity());
+                             ? std::numeric_limits<double>::infinity()
+                             : expr->a / expr->b);
     }
 
     void operator()(channel::Channel<Quit>& /*channel*/)

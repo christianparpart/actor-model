@@ -10,9 +10,9 @@ void join(auto&... threads)
     (threads.join(), ...);
 }
 
-void repeat_until(auto target, auto const& callable)
+void repeat(auto const& callable)
 {
-    while (callable() != target)
+    while (callable())
     {
         ;
     }
@@ -52,7 +52,7 @@ int main()
         channelC.close();
     } };
 
-    repeat_until(false, [&] {
+    repeat([&] {
         return controller.select(
             []<typename T>(channel::Channel<T>& channel) {
                 if (auto const message = channel.try_receive(); message.has_value())

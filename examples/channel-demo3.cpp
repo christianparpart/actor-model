@@ -23,7 +23,7 @@ int main()
 {
     auto controller = comms::ChannelController {};
 
-    auto channelA = controller.channel<int>(comms::ChannelBufferSize { 1 });
+    auto channelA = controller.channel<int>(comms::ChannelBufferSize { 1 }, "channelA");
     auto senderA = std::thread { [&channelA] {
         for (int i = 1; i <= 5; ++i)
         {
@@ -33,7 +33,7 @@ int main()
         channelA.close();
     } };
 
-    auto channelB = controller.channel<std::string>(comms::ChannelBufferSize { 1 });
+    auto channelB = controller.channel<std::string>(comms::ChannelBufferSize { 1 }, "channelB");
     auto senderB = std::thread { [&channelB] {
         for (auto const* name: { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Judy" })
         {
@@ -43,7 +43,7 @@ int main()
         channelB.close();
     } };
 
-    auto channelC = controller.channel<double>(comms::ChannelBufferSize { 1 });
+    auto channelC = controller.channel<double>(comms::ChannelBufferSize { 1 }, "channelC");
     auto senderC = std::thread { [&channelC] {
         for (int i = 1; i <= 5; ++i)
         {
@@ -57,7 +57,7 @@ int main()
         return controller.select(
             []<typename T>(comms::Channel<T>& channel) {
                 if (auto const message = channel.try_receive(); message.has_value())
-                    std::println("Received message from channel: {}", message.value());
+                    std::println("Received message from {}: {}", channel.name(), message.value());
             },
             channelA,
             channelB,

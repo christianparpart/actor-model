@@ -7,6 +7,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace comms
@@ -73,7 +74,7 @@ class [[nodiscard]] ChannelController
     }
 
     template <typename T>
-    Channel<T> channel(ChannelBufferSize maxBufferSize);
+    Channel<T> channel(ChannelBufferSize maxBufferSize, std::string name = {});
 
     template <typename... Ts>
     std::vector<size_t> select(Channel<Ts>&... channels);
@@ -105,7 +106,9 @@ class [[nodiscard]] Channel
   public:
     using value_type = T;
 
-    explicit Channel(ChannelBufferSize maxBufferSize = { 1 }, ChannelController* controller = nullptr);
+    explicit Channel(ChannelBufferSize maxBufferSize = { 1 },
+                     ChannelController* controller = nullptr,
+                     std::string name = {});
 
     Channel(Channel&&) = default;
     Channel(Channel const&) = delete;
@@ -117,6 +120,9 @@ class [[nodiscard]] Channel
     {
         return *_controller;
     }
+
+    /// Retrieves the channel name, useful for introspection/debugging purposes.
+    [[nodiscard]] std::string const& name() const noexcept;
 
     /// Returns the maximum buffer size of the channel.
     [[nodiscard]] size_t capacity() const noexcept;
@@ -152,15 +158,17 @@ class [[nodiscard]] Channel
     ChannelBufferSize _maxBufferSize;
     std::deque<T> _queue;
     std::atomic<bool> _terminating = false;
+    std::string _name;
 };
 
 // ----------------------------------------------------------------------------
 
 template <typename T>
-Channel<T>::Channel(ChannelBufferSize maxBufferSize, ChannelController* controller):
+Channel<T>::Channel(ChannelBufferSize maxBufferSize, ChannelController* controller, std::string name):
     _ownedController { controller ? nullptr : std::make_unique<ChannelController>() },
     _controller { controller ? controller : _ownedController.get() },
-    _maxBufferSize { maxBufferSize }
+    _maxBufferSize { maxBufferSize },
+    _name { std::move(name) }
 {
     ++_controller->_channelCount;
 }
@@ -223,6 +231,12 @@ inline size_t Channel<T>::size() const noexcept
 }
 
 template <typename T>
+inline std::string const& Channel<T>::name() const noexcept
+{
+    return _name;
+}
+
+template <typename T>
 inline size_t Channel<T>::capacity() const noexcept
 {
     auto _ = std::unique_lock { *_controller };
@@ -243,9 +257,9 @@ inline void Channel<T>::close() noexcept
 // ----------------------------------------------------------------------------
 
 template <typename T>
-inline Channel<T> ChannelController::channel(ChannelBufferSize maxBufferSize)
+inline Channel<T> ChannelController::channel(ChannelBufferSize maxBufferSize, std::string name)
 {
-    return Channel<T> { maxBufferSize, this };
+    return Channel<T> { maxBufferSize, this, std::move(name) };
 }
 
 template <typename... Ts>

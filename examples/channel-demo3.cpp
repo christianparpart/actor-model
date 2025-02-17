@@ -5,8 +5,7 @@
 
 #include <actor/channel.hpp>
 
-template <typename... Ts>
-void join(Ts&... threads)
+void join(auto&... threads)
 {
     (threads.join(), ...);
 }

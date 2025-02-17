@@ -11,6 +11,14 @@ void join(Ts&... threads)
     (threads.join(), ...);
 }
 
+void repeat_until(auto target, auto const& callable)
+{
+    while (callable() != target)
+    {
+        ;
+    }
+}
+
 int main()
 {
     auto controller = comms::ChannelController {};
@@ -45,17 +53,16 @@ int main()
         channelC.close();
     } };
 
-    while (controller.select(
-        []<typename T>(comms::Channel<T>& channel) {
-            if (auto const message = channel.try_receive(); message.has_value())
-                std::println("Received message from channel: {}", message.value());
-        },
-        channelA,
-        channelB,
-        channelC))
-    {
-        // Do nothing.
-    }
+    repeat_until(false, [&] {
+        return controller.select(
+            []<typename T>(comms::Channel<T>& channel) {
+                if (auto const message = channel.try_receive(); message.has_value())
+                    std::println("Received message from channel: {}", message.value());
+            },
+            channelA,
+            channelB,
+            channelC);
+    });
 
     join(senderA, senderB, senderC);
 

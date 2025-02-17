@@ -3,15 +3,14 @@
 #include <format>
 #include <print>
 #include <thread>
-#include <tuple>
 
 #include <actor/channel.hpp>
 
 int main()
 {
-    auto controller = comms::ChannelController {};
+    auto controller = channel::Controller {};
 
-    auto channelA = controller.channel<int>(comms::ChannelBufferSize { 1 });
+    auto channelA = controller.channel<int>(channel::MessageBufferSize { 1 });
     auto senderA = std::thread { [&channelA] {
         for (int i = 1; i <= 5; ++i)
         {
@@ -21,7 +20,7 @@ int main()
         channelA.close();
     } };
 
-    auto channelB = controller.channel<std::string>(comms::ChannelBufferSize { 1 });
+    auto channelB = controller.channel<std::string>(channel::MessageBufferSize { 1 });
     auto senderB = std::thread { [&channelB] {
         for (auto const* name: { "Alice", "Bob", "Charlie", "David", "Eve", "Frank", "Grace", "Heidi", "Ivan", "Judy" })
         {

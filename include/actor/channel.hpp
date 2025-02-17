@@ -10,11 +10,11 @@
 #include <string>
 #include <vector>
 
-namespace comms
+namespace channel
 {
 
 /// The buffer size of the channel.
-struct ChannelBufferSize
+struct MessageBufferSize
 {
     size_t value;
 };
@@ -23,7 +23,9 @@ template <typename T>
 class Channel;
 
 /// Manages multiple channels.
-class [[nodiscard]] ChannelController
+///
+/// This is specifically important when intending to multiplex multiple receiving channels
+class [[nodiscard]] Controller
 {
   private:
     std::mutex _mutex;
@@ -74,7 +76,7 @@ class [[nodiscard]] ChannelController
     }
 
     template <typename T>
-    Channel<T> channel(ChannelBufferSize maxBufferSize, std::string name = {});
+    Channel<T> channel(MessageBufferSize maxBufferSize, std::string name = {});
 
     template <typename... Ts>
     std::vector<size_t> select(Channel<Ts>&... channels);
@@ -94,21 +96,19 @@ class [[nodiscard]] ChannelController
 /// Thread-safe channel for sending and receiving messages.
 ///
 /// @code
-/// auto channel = Channel<int> { ChannelBufferSize { 1 } };
+/// auto channel = channel::Channel<int> { MessageBufferSize { 1 } };
 /// std::thread { [&channel] { channel.send(42); } }.detach();
 /// std::thread { [&channel] { std::cout << channel.receive().value() << std::endl; } }.detach();
 /// @endcode
 template <typename T>
 class [[nodiscard]] Channel
 {
-    friend class ChannelController;
+    friend class Controller;
 
   public:
     using value_type = T;
 
-    explicit Channel(ChannelBufferSize maxBufferSize = { 1 },
-                     ChannelController* controller = nullptr,
-                     std::string name = {});
+    explicit Channel(MessageBufferSize maxBufferSize = { 1 }, Controller* controller = nullptr, std::string name = {});
 
     Channel(Channel&&) = default;
     Channel(Channel const&) = delete;
@@ -116,7 +116,7 @@ class [[nodiscard]] Channel
     Channel& operator=(Channel const&) = delete;
     ~Channel();
 
-    [[nodiscard]] ChannelController const& controller() const noexcept
+    [[nodiscard]] Controller const& controller() const noexcept
     {
         return *_controller;
     }
@@ -153,9 +153,9 @@ class [[nodiscard]] Channel
     void close() noexcept;
 
   private:
-    std::unique_ptr<ChannelController> _ownedController;
-    ChannelController* _controller;
-    ChannelBufferSize _maxBufferSize;
+    std::unique_ptr<Controller> _ownedController;
+    Controller* _controller;
+    MessageBufferSize _maxBufferSize;
     std::deque<T> _queue;
     std::atomic<bool> _terminating = false;
     std::string _name;
@@ -164,8 +164,8 @@ class [[nodiscard]] Channel
 // ----------------------------------------------------------------------------
 
 template <typename T>
-Channel<T>::Channel(ChannelBufferSize maxBufferSize, ChannelController* controller, std::string name):
-    _ownedController { controller ? nullptr : std::make_unique<ChannelController>() },
+Channel<T>::Channel(MessageBufferSize maxBufferSize, Controller* controller, std::string name):
+    _ownedController { controller ? nullptr : std::make_unique<Controller>() },
     _controller { controller ? controller : _ownedController.get() },
     _maxBufferSize { maxBufferSize },
     _name { std::move(name) }
@@ -257,13 +257,13 @@ inline void Channel<T>::close() noexcept
 // ----------------------------------------------------------------------------
 
 template <typename T>
-inline Channel<T> ChannelController::channel(ChannelBufferSize maxBufferSize, std::string name)
+inline Channel<T> Controller::channel(MessageBufferSize maxBufferSize, std::string name)
 {
     return Channel<T> { maxBufferSize, this, std::move(name) };
 }
 
 template <typename... Ts>
-std::vector<size_t> ChannelController::select(Channel<Ts>&... channels)
+std::vector<size_t> Controller::select(Channel<Ts>&... channels)
 {
     auto result = std::vector<size_t> {};
     auto const tryFetch = [&]<typename T>(Channel<T>& channel, size_t index) {
@@ -283,7 +283,7 @@ std::vector<size_t> ChannelController::select(Channel<Ts>&... channels)
 
 template <typename Callable, typename... Ts>
     requires(std::invocable<Callable, Channel<Ts>&> || ...)
-bool ChannelController::select(Callable const& callable, Channel<Ts>&... channels)
+bool Controller::select(Callable const& callable, Channel<Ts>&... channels)
 {
     auto const result = select(channels...);
 
@@ -305,4 +305,4 @@ bool ChannelController::select(Callable const& callable, Channel<Ts>&... channel
     return !result.empty();
 }
 
-} // namespace comms
+} // namespace channel

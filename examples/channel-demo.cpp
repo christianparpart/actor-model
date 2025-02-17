@@ -7,8 +7,8 @@
 
 int main()
 {
-    auto controller = comms::ChannelController {};
-    auto channel = controller.channel<int>(comms::ChannelBufferSize { 1 });
+    auto controller = channel::Controller {};
+    auto channel = controller.channel<int>(channel::MessageBufferSize { 1 });
 
     auto sender = std::thread { [&channel] {
         std::println("Sending messages:");

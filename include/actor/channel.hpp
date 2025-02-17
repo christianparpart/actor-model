@@ -85,7 +85,7 @@ class [[nodiscard]] ChannelController
     /// If one or more values are available, they will all be returned>
     template <typename Callable, typename... Ts>
         requires(std::invocable<Callable, Channel<Ts>&> || ...)
-    bool select(Callable&& callable, Channel<Ts>&... channels);
+    bool select(Callable const& callable, Channel<Ts>&... channels);
 
     template <typename... Ts>
     std::optional<std::variant<Ts...>> select_value_for(std::chrono::milliseconds timeout, Ts&&... channels);
@@ -283,7 +283,7 @@ std::vector<size_t> ChannelController::select(Channel<Ts>&... channels)
 
 template <typename Callable, typename... Ts>
     requires(std::invocable<Callable, Channel<Ts>&> || ...)
-bool ChannelController::select(Callable&& callable, Channel<Ts>&... channels)
+bool ChannelController::select(Callable const& callable, Channel<Ts>&... channels)
 {
     auto const result = select(channels...);
 
@@ -294,7 +294,7 @@ bool ChannelController::select(Callable&& callable, Channel<Ts>&... channels)
         (
             [&] {
                 if (i == index)
-                    std::forward<Callable>(callable).template operator()<Ts>(channels);
+                    callable.template operator()<Ts>(channels);
                 ++i;
             }(),
             ...

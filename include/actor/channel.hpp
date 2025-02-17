@@ -22,6 +22,16 @@ struct MessageBufferSize
 template <typename T>
 class Channel;
 
+/// Thrown when a channel does not belong to the controller that is being used.
+class ControllerMismatchError: public std::runtime_error
+{
+  public:
+    ControllerMismatchError():
+        std::runtime_error("Channel does not belong to the controller")
+    {
+    }
+};
+
 /// Manages multiple channels.
 ///
 /// This is specifically important when intending to multiplex multiple receiving channels
@@ -31,6 +41,7 @@ class [[nodiscard]] Controller
     std::mutex _mutex;
     std::condition_variable _condition;
     std::atomic<size_t> _channelCount = 0;
+    std::atomic<bool> _terminating = false;
 
     template <typename T>
     friend class Channel;
@@ -59,6 +70,17 @@ class [[nodiscard]] Controller
     [[nodiscard]] bool alive() const noexcept
     {
         return _channelCount.load() > 0;
+    }
+
+    [[nodiscard]] bool terminating() const noexcept
+    {
+        return _terminating;
+    }
+
+    void terminate() noexcept
+    {
+        _terminating = true;
+        notify_all();
     }
 
     template <typename Predicate>
@@ -90,7 +112,8 @@ class [[nodiscard]] Controller
     ///
     /// If no value is available, the caller will be blocked until a value is available for the specified timeout.
     ///
-    /// @returns A vector of indices of the channels with available values or an empty vector if the timeout was reached.
+    /// @returns A vector of indices of the channels with available values or an empty vector if the timeout was
+    /// reached.
     template <typename... Ts>
     std::vector<size_t> select_for(std::chrono::milliseconds timeout, Channel<Ts>&... channels);
 
@@ -102,7 +125,7 @@ class [[nodiscard]] Controller
     /// @retval false If no value is available.
     template <typename Callable, typename... Ts>
         requires(std::invocable<Callable, Channel<Ts>&> || ...)
-    bool select(Callable const& callable, Channel<Ts>&... channels);
+    bool select(Callable&& callable, Channel<Ts>&... channels);
 
     /// Selects all values available from multiple channels.
     ///
@@ -112,7 +135,7 @@ class [[nodiscard]] Controller
     /// @retval false If no value is available.
     template <typename Callable, typename... Ts>
         requires(std::invocable<Callable, Channel<Ts>&> || ...)
-    bool select_for(std::chrono::milliseconds timeout, Callable const& callable, Channel<Ts>&... channels);
+    bool select_for(std::chrono::milliseconds timeout, Callable&& callable, Channel<Ts>&... channels);
 
     // TODO
     // template <typename... Ts>
@@ -305,6 +328,16 @@ std::vector<size_t> Controller::select(Channel<Ts>&... channels)
 template <typename... Ts>
 std::vector<size_t> Controller::select_for(std::chrono::milliseconds timeout, Channel<Ts>&... channels)
 {
+    // clang-format off
+    (
+        [&] {
+            if (&channels.controller() != this)
+                throw ControllerMismatchError {};
+        }(),
+        ...
+    );
+    // clang-format on
+
     auto result = std::vector<size_t> {};
     auto const tryFetch = [&]<typename T>(Channel<T>& channel, size_t index) {
         auto const pending = channel._queue.size();
@@ -312,25 +345,28 @@ std::vector<size_t> Controller::select_for(std::chrono::milliseconds timeout, Ch
             result.push_back(index);
     };
     auto lock = std::unique_lock { _mutex };
-    _condition.wait_for(lock, timeout, [&] {
-        result.clear();
-        size_t index = 0;
-        (tryFetch(channels, index++), ...);
-        return !result.empty() || !alive();
-    });
+    if (!terminating())
+    {
+        _condition.wait_for(lock, timeout, [&] {
+            result.clear();
+            size_t index = 0;
+            (tryFetch(channels, index++), ...);
+            return !result.empty() || !alive() || terminating();
+        });
+    }
     return result;
 }
 
 template <typename Callable, typename... Ts>
     requires(std::invocable<Callable, Channel<Ts>&> || ...)
-bool Controller::select(Callable const& callable, Channel<Ts>&... channels)
+bool Controller::select(Callable&& callable, Channel<Ts>&... channels)
 {
-    return select_for(std::chrono::years { 10 }, callable, channels...);
+    return select_for(std::chrono::years { 10 }, std::forward<Callable>(callable), channels...);
 }
 
 template <typename Callable, typename... Ts>
     requires(std::invocable<Callable, Channel<Ts>&> || ...)
-bool Controller::select_for(std::chrono::milliseconds timeout, Callable const& callable, Channel<Ts>&... channels)
+bool Controller::select_for(std::chrono::milliseconds timeout, Callable&& callable, Channel<Ts>&... channels)
 {
     auto const result = select_for(timeout, channels...);
 
@@ -341,7 +377,7 @@ bool Controller::select_for(std::chrono::milliseconds timeout, Callable const& c
         (
             [&] {
                 if (i == index)
-                    callable.template operator()<Ts>(channels);
+                    std::forward<Callable>(callable)(channels);
                 ++i;
             }(),
             ...

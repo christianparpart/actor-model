@@ -55,6 +55,10 @@ if(ACTOR_EXAMPLES)
   set_target_properties(channel-demo3 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(channel-demo3 actor)
 
+  add_executable(channel-demo4 examples/channel-demo4.cpp)
+  set_target_properties(channel-demo4 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
+  target_link_libraries(channel-demo4 actor)
+
   add_executable(chain-demo examples/chain-demo.cpp)
   set_target_properties(chain-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
   target_link_libraries(chain-demo actor)

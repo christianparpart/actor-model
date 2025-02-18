@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include <chrono>
+#include <numbers>
 #include <print>
 #include <thread>
 

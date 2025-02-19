@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+#include <reflection-cpp/reflection.hpp>
+
 #include <chrono>
 #include <numbers>
 #include <print>
@@ -57,7 +59,10 @@ int main()
         return controller.select(
             []<typename T>(channel::Channel<T>& channel) {
                 if (auto const message = channel.try_receive(); message.has_value())
-                    std::println("Received message from {}: {}", channel.name(), message.value());
+                    std::println("Received message from {} <{}>: {}",
+                                 channel.name(),
+                                 Reflection::TypeNameOf<T>,
+                                 message.value());
             },
             channelA,
             channelB,

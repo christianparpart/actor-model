@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+#include <reflection-cpp/reflection.hpp>
+
 #include <chrono>
 #include <future>
 #include <print>
@@ -33,28 +35,27 @@ struct Calculator
     void operator()(channel::Channel<Plus>& channel)
     {
         if (auto const expr = channel.try_receive(); expr.has_value())
-            std::println("{}: {} + {} = {}", channel.name(), expr->a, expr->b, expr->a + expr->b);
+            std::println("{} ({}) ~> {}", channel.name(), Reflection::Inspect(*expr), expr->a + expr->b);
     }
 
     void operator()(channel::Channel<Minus>& channel)
     {
         if (auto const expr = channel.try_receive(); expr.has_value())
-            std::println("{}: {} - {} = {}", channel.name(), expr->a, expr->b, expr->a - expr->b);
+            std::println("{} ({}) ~> {}", channel.name(), Reflection::Inspect(*expr), expr->a - expr->b);
     }
 
     void operator()(channel::Channel<Multiply>& channel)
     {
         if (auto const expr = channel.try_receive(); expr.has_value())
-            std::println("{}: {} * {} = {}", channel.name(), expr->a, expr->b, expr->a * expr->b);
+            std::println("{} ({}) ~> {}", channel.name(), Reflection::Inspect(*expr), expr->a * expr->b);
     }
 
     void operator()(channel::Channel<Divide>& channel)
     {
         if (auto const expr = channel.try_receive(); expr.has_value())
-            std::println("{}: {} / {} = {:.2f}",
+            std::println("{} ({}) ~> {:.2f}",
                          channel.name(),
-                         expr->a,
-                         expr->b,
+                         Reflection::Inspect(*expr),
                          std::abs(expr->b) <= std::numeric_limits<double>::epsilon()
                              ? std::numeric_limits<double>::infinity()
                              : expr->a / expr->b);
@@ -73,11 +74,11 @@ int main()
 
     auto controller = channel::Controller {};
 
-    auto plusChan = controller.channel<Plus>(channel::MessageBufferSize { 1 }, "plusChan");
-    auto minusChan = controller.channel<Minus>(channel::MessageBufferSize { 1 }, "minusChan");
-    auto multiplyChan = controller.channel<Multiply>(channel::MessageBufferSize { 1 }, "multiplyChan");
-    auto divideChan = controller.channel<Divide>(channel::MessageBufferSize { 1 }, "divideChan");
-    auto quitChan = controller.channel<Quit>(channel::MessageBufferSize { 1 }, "quitChan");
+    auto plusChan = controller.channel<Plus>(channel::MessageBufferSize { 1 }, "Plus");
+    auto minusChan = controller.channel<Minus>(channel::MessageBufferSize { 1 }, "Minus");
+    auto multiplyChan = controller.channel<Multiply>(channel::MessageBufferSize { 1 }, "Multiply");
+    auto divideChan = controller.channel<Divide>(channel::MessageBufferSize { 1 }, "Divide");
+    auto quitChan = controller.channel<Quit>(channel::MessageBufferSize { 1 }, "Quit");
 
     auto exampleProducer = std::async(std::launch::async, [&] {
         for (int i = 1; i <= 10; ++i)

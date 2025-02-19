@@ -19,6 +19,16 @@ include(ClangTidy)
 include(PedanticCompiler)
 
 # ----------------------------------------------------------------------------
+# download CPM.cmake
+file(
+    DOWNLOAD
+    https://github.com/cpm-cmake/CPM.cmake/releases/download/v0.38.3/CPM.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake
+    EXPECTED_HASH SHA256=cc155ce02e7945e7b8967ddfaff0b050e958a723ef7aad3766d368940cb15494
+)
+include(${CMAKE_CURRENT_BINARY_DIR}/cmake/CPM.cmake)
+
+# ----------------------------------------------------------------------------
 if(NOT MSVC)
   add_definitions(-Wall)
   add_definitions(-pedantic)
@@ -39,25 +49,30 @@ install(
     DESTINATION "${CMAKE_INSTALL_PREFIX}/include"
     FILES_MATCHING PATTERN "*.hpp")
 
-option(ACTOR_EXAMPLES "Build Actor examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
 
 # ----------------------------------------------------------------------------
+option(ACTOR_EXAMPLES "Build Actor examples [default: ${MASTER_PROJECT}]" ${MASTER_PROJECT})
+
 if(ACTOR_EXAMPLES)
+  if(ACTOR_EXAMPLES)
+    CPMAddPackage("gh:contour-terminal/reflection-cpp#master")
+  endif()
+
   add_executable(channel-demo examples/channel-demo.cpp)
   set_target_properties(channel-demo PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
-  target_link_libraries(channel-demo actor)
+  target_link_libraries(channel-demo actor reflection-cpp::reflection-cpp)
 
   add_executable(channel-demo2 examples/channel-demo2.cpp)
   set_target_properties(channel-demo2 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
-  target_link_libraries(channel-demo2 actor)
+  target_link_libraries(channel-demo2 actor reflection-cpp::reflection-cpp)
 
   add_executable(channel-demo3 examples/channel-demo3.cpp)
   set_target_properties(channel-demo3 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
-  target_link_libraries(channel-demo3 actor)
+  target_link_libraries(channel-demo3 actor reflection-cpp::reflection-cpp)
 
   add_executable(channel-demo4 examples/channel-demo4.cpp)
   set_target_properties(channel-demo4 PROPERTIES CXX_STANDARD 23 CXX_STANDARD_REQUIRED ON)
-  target_link_libraries(channel-demo4 actor)
+  target_link_libraries(channel-demo4 actor reflection-cpp::reflection-cpp)
 
   add_executable(chain-demo examples/chain-demo.cpp)
   set_target_properties(chain-demo PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
